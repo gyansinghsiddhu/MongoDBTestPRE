@@ -88,7 +88,9 @@ namespace MongoDBTest.Model
         public int IsPreOrder { get; set; }
         public int SoldOutTime { get; set; }
         public int FSTotalSold { get; set; }
-       
+        public int IsFsInfo { get; set; }
+
+
 
 
 
