@@ -89,6 +89,8 @@ namespace MongoDBTest.Model
         public int SoldOutTime { get; set; }
         public int FSTotalSold { get; set; }
         public int IsFsInfo { get; set; }
+        public int IsFsEligible { get; set; }
+        public int RescrapPending { get; set; }
 
 
 

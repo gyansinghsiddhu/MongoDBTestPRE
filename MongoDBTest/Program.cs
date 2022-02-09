@@ -83,7 +83,7 @@ namespace MongoDBTest
             IMongoDatabase db = dbClient.GetDatabase("owl_"+ sModel.Country);
             var Coll_SessionInfo = db.GetCollection<BsonDocument>("promotion");
             var Coll_SkuPre = db.GetCollection<BsonDocument>("sku_pre");
-            
+            var Coll_SkuPost = db.GetCollection<BsonDocument>("sku_post");
 
             for (; ; )
             {
@@ -109,12 +109,11 @@ namespace MongoDBTest
                         sModel.ProEndTime = Session_doc["unix_end_time"].ToString();
                         sModel.ScrapName = Session_doc["scrap_name"].ToString();
                         sModel.ItemCount = Convert.ToInt32(Session_doc["fs_total_item_scrap"]);
-                        //if (Session_doc["post_scrap_count"].IsBsonNull == true) sModel.Slot = 0; else sModel.Slot = Convert.ToInt32(Session_doc["post_scrap_count"]);
-
-
+                        if (Session_doc["post_scrap_count"].IsBsonNull == true) sModel.Slot = 0; else sModel.Slot = Convert.ToInt32(Session_doc["post_scrap_count"]);
 
                         if (IsRecordExistProInfo(sModel.PromotionId, sModel.Country) == false)
                             SavePromotionInfo(sModel.PromotionId, sModel.PromotionName, sModel.ProStartTime, sModel.ProEndTime, sModel.Country, ConvertUnixToLocal(sModel.Country,sModel.ProStartTime), ConvertUnixToLocal(sModel.Country,sModel.ProEndTime) , getCurrentTime(sModel.Country), sModel.ItemCount, " " , ConvertUnixToLocal(sModel.Country, sModel.Pro_FS_StartTime) , ConvertUnixToLocal(sModel.Country, sModel.Pro_FS_EndTime));
+
 
 
                         //   SET ALL VALUE zero or Blank for SKU TABLE 
@@ -128,9 +127,9 @@ namespace MongoDBTest
                         sModel.ImageURL = ""; sModel.MonthlyRevenue = 0;
                         sModel.ProductURL = ""; sModel.IsPreOrder = 0; sModel.Estimated_Days = 0;
                         sModel.TierVariations = ""; sModel.PriceFS = 0; sModel.IsFsInfo = 0;
-                        sModel.FSLatestSold = 0; sModel.VariationBal = 0;
+                        sModel.FSLatestSold = 0; sModel.VariationBal = 0; sModel.IsFsEligible = 1; sModel.RescrapPending = 0;
 
-                        var PreScrapfilter = builder.Eq("promotionid", Convert.ToDouble(sModel.PromotionId))  & builder.Eq("sql_status", 0);
+                        var PreScrapfilter = builder.Eq("promotionid", Convert.ToDouble(sModel.PromotionId)) & builder.Eq("sql_status", 0) & builder.Ne("catid", 100642) & builder.Ne("catid", 102053);
                         var Pre_docs = Coll_SkuPre.Find(PreScrapfilter).ToList();
 
                         foreach (BsonDocument Pre_doc in Pre_docs)
@@ -178,12 +177,25 @@ namespace MongoDBTest
                                 try { sModel.IsPreOrder = Convert.ToInt32(Pre_doc["is_pre_order"]); } catch (Exception ex) { Console.WriteLine(ex.ToString()); }  //31
                                 try { sModel.Estimated_Days = Convert.ToInt32(Pre_doc["estimated_days"]); } catch (Exception ex) { Console.WriteLine(ex.ToString()); } //32
                                 try { sModel.ShopName = Pre_doc["shop_name"].ToString(); } catch { }
+                                
                                 try { sModel.IsFsInfo = Convert.ToInt32(Pre_doc["is_fs_eligible"]); } catch (Exception ex) { Console.WriteLine(ex.ToString()); }  //31
-                                if (sModel.IsFsInfo == 0) sModel.IsFsInfo = 1; else sModel.IsFsInfo = 0;
+                                //if (sModel.IsFsInfo == 0) sModel.IsFsInfo = 1; else sModel.IsFsInfo = 0;
+
+                                // ADD NEW COLUMNS
+                                try { sModel.IsFsEligible = Convert.ToInt32(Pre_doc["is_fs_eligible"]); } catch (Exception ex) { Console.WriteLine(ex.ToString()); }  //31
+                                try { sModel.RescrapPending = Convert.ToInt32(Pre_doc["rescrap_pending"]); } catch (Exception ex) { Console.WriteLine(ex.ToString()); }  //31
+
 
 
                                 if (IsRecordExist_ShopDATA(sModel.Country, sModel.ShopID) == false)
                                     SaveShopData(sModel.Country, sModel.ShopID, sModel.ShopName, getCurrentTime(sModel.Country));
+
+
+
+                                if (IsRecordExistPreScrap(sModel.PromotionId, sModel.Country, sModel.ShopID, sModel.ItemID) == false)
+                                    SavePreScrap(sModel.Country, sModel.PromotionId, sModel.ShopID, sModel.ItemID, getCurrentTime(sModel.Country).ToString(), -1, 0, Convert.ToInt32(sModel.SellerType), sModel.UnixCTime.ToString(), sModel.ProductName, sModel.Star, sModel.Rating, sModel.TotalSold, sModel.MonthlySold, sModel.CatId, sModel.PriceSlashMin, sModel.PriceSlashMax, sModel.PriceMin, sModel.PriceMax, 0, sModel.Stock, sModel.Category1, sModel.Category2, sModel.Category3, sModel.ImageURL, sModel.MonthlyRevenue, sModel.ProductURL, sModel.IsPreOrder, sModel.Estimated_Days, sModel.TierVariations, sModel.IsFsInfo, sModel.RescrapPending, sModel.IsFsEligible);
+                                else
+                                    UpdatePreScrap(sModel.Country, sModel.PromotionId, sModel.ShopID, sModel.ItemID, getCurrentTime(sModel.Country).ToString(), -1, 0, Convert.ToInt32(sModel.SellerType), sModel.UnixCTime.ToString(), sModel.ProductName, sModel.Star, sModel.Rating, sModel.TotalSold, sModel.MonthlySold, sModel.CatId, sModel.PriceSlashMin, sModel.PriceSlashMax, sModel.PriceMin, sModel.PriceMax, 0, sModel.Stock, sModel.Category1, sModel.Category2, sModel.Category3, sModel.ImageURL, sModel.MonthlyRevenue, sModel.ProductURL, sModel.IsPreOrder, sModel.Estimated_Days, sModel.TierVariations, sModel.IsFsInfo, sModel.RescrapPending, sModel.IsFsEligible);
 
 
                                 sModel.ModelID = "";
@@ -194,6 +206,7 @@ namespace MongoDBTest
                                 sModel.VariationUnitSold = 0;
                                 sModel.TierIndex = "";
                                 sModel.VariationImageURL = "";
+
 
                                 // VARIATION DETAILS ...........................
 
@@ -221,14 +234,11 @@ namespace MongoDBTest
 
                                         }
 
-                                        if (IsRecordExistPreScrap(sModel.PromotionId, sModel.Country, sModel.ShopID, sModel.ItemID) == false)
-                                            SavePreScrap(sModel.Country, sModel.PromotionId, sModel.ShopID, sModel.ItemID, getCurrentTime(sModel.Country).ToString(), -1, 0, Convert.ToInt32(sModel.SellerType), sModel.UnixCTime.ToString(), sModel.ProductName, sModel.Star, sModel.Rating, sModel.TotalSold, sModel.MonthlySold, sModel.CatId, sModel.PriceSlashMin, sModel.PriceSlashMax, sModel.PriceMin, sModel.PriceMax, 0, sModel.Stock, sModel.Category1, sModel.Category2, sModel.Category3, sModel.ImageURL, sModel.MonthlyRevenue, sModel.ProductURL, sModel.IsPreOrder, sModel.Estimated_Days, sModel.TierVariations, sModel.IsFsInfo);
-                                        else
-                                            UpdatePreScrap(sModel.Country, sModel.PromotionId, sModel.ShopID, sModel.ItemID, getCurrentTime(sModel.Country).ToString(), -1, 0, Convert.ToInt32(sModel.SellerType), sModel.UnixCTime.ToString(), sModel.ProductName, sModel.Star, sModel.Rating, sModel.TotalSold, sModel.MonthlySold, sModel.CatId, sModel.PriceSlashMin, sModel.PriceSlashMax, sModel.PriceMin, sModel.PriceMax, 0, sModel.Stock, sModel.Category1, sModel.Category2, sModel.Category3, sModel.ImageURL, sModel.MonthlyRevenue, sModel.ProductURL, sModel.IsPreOrder, sModel.Estimated_Days, sModel.TierVariations, sModel.IsFsInfo);
-
 
                                         if (IsRecordExist_Sku_model(sModel.PromotionId, sModel.Country, sModel.ModelID, sModel.ItemID) == false)
                                             SaveSku_model(sModel.Country, sModel.PromotionId, sModel.ModelID, sModel.ItemID, sModel.VariationName, sModel.VariationPriceSlash, sModel.VariationPrice, sModel.VariationStock, sModel.VariationImageURL, 0, 0, sModel.TierIndex);
+                                        else
+                                            UpdateSku_model(sModel.Country, sModel.PromotionId, sModel.ModelID, sModel.ItemID, sModel.VariationName, sModel.VariationPriceSlash, sModel.VariationPrice, sModel.VariationStock, sModel.VariationImageURL, 0, 0, sModel.TierIndex);
 
                                     }
                                     catch { continue; }
@@ -244,15 +254,34 @@ namespace MongoDBTest
 
                                 }
 
+
+
                                 // UPDATE SQL STATUS
                                 var PreScrapItemfilter = builder.Eq("promotionid", Convert.ToInt64(sModel.PromotionId)) & builder.Eq("shopid", Convert.ToInt32(sModel.ShopID)) & builder.Eq("itemid", Convert.ToInt64(sModel.ItemID));
                                 var updateItemSqlStatus = Builders<BsonDocument>.Update.Set("sql_status", 1);
                                 var result = Coll_SkuPre.UpdateOne(PreScrapItemfilter, updateItemSqlStatus);
+
+                                if (sModel.RescrapPending == 1)
+                                {
+                                    //  OPEN PROMOTION FOR RESCRAPPING (Post SLOT)
+                                    var SessionProIdfilter = builder.Eq("promotionid", Convert.ToInt64(sModel.PromotionId));
+                                    var updateSesionSqlStatus = Builders<BsonDocument>.Update.Set("sql_status", 0);
+                                    var resultSession = Coll_SessionInfo.UpdateOne(SessionProIdfilter, updateSesionSqlStatus);
+                                    //  OPEN POST SKU & SLOT FOR RESCRAPPING (Post SLOT)
+                                    var PostScrapItemfilter = builder.Eq("promotionid", Convert.ToInt64(sModel.PromotionId)) & builder.Eq("shopid", Convert.ToInt32(sModel.ShopID)) & builder.Eq("itemid", Convert.ToInt64(sModel.ItemID)) & builder.Eq("slot", Convert.ToInt32(sModel.Slot)) & builder.Eq("is_fs_eligible", true);
+                                    var updatePostItemSqlStatus = Builders<BsonDocument>.Update.Set("sql_status", 0); 
+                                    var resultPost = Coll_SkuPost.UpdateOne(PostScrapItemfilter, updatePostItemSqlStatus);
+
+                                    //  UPDATE RESCRAPPING STATUS  in PRE COLLECTION 
+                                    var updateItemRescap = Builders<BsonDocument>.Update.Set("rescrap_pending", false);
+                                    var resultPre = Coll_SkuPre.UpdateOne(PreScrapItemfilter, updateItemRescap);
+                                }
+
+
                             }
                             catch { continue; }
 
                         }
-
 
                     }
 
@@ -330,16 +359,16 @@ namespace MongoDBTest
             return ScrapDAL.IsRecordExistPreScrap(PromotionID, Cntry, Shopid, prodid);
         }
         
-        static void SavePreScrap(string Country, string PromoID, string ShopID, string ProdID, string STRTTIME, int Userid, int ScrapType, int CbOption, string CTIME, string PRODUCT_NAME, Decimal STAR, int RATING, int TOTAL_SOLD, int MONTHLY_SOLD, string CatID, Decimal PRICE_SLASH_MIN, Decimal PRICE_SLASH_MAX, Decimal M_PRICE, Decimal MX_PRICE, Decimal AvgPrice, int Stock, string CAT_NAME_1, string CAT_NAME_2, string CAT_NAME_3, string ImgUrl, Decimal MonthlyRevenue, string LINK_SKU, int IsPreOrder, int EstimatedDays, string TierVarJson , int IsFSInfo)
+        static void SavePreScrap(string Country, string PromoID, string ShopID, string ProdID, string STRTTIME, int Userid, int ScrapType, int CbOption, string CTIME, string PRODUCT_NAME, Decimal STAR, int RATING, int TOTAL_SOLD, int MONTHLY_SOLD, string CatID, Decimal PRICE_SLASH_MIN, Decimal PRICE_SLASH_MAX, Decimal M_PRICE, Decimal MX_PRICE, Decimal AvgPrice, int Stock, string CAT_NAME_1, string CAT_NAME_2, string CAT_NAME_3, string ImgUrl, Decimal MonthlyRevenue, string LINK_SKU, int IsPreOrder, int EstimatedDays, string TierVarJson , int IsFSInfo , int RescrapPending, int IsFsEligible)
         {
             var ScrapDAL = new ScrapDAL(_iconfiguration);
-            ScrapDAL.SavePreScrap(Country, PromoID, ShopID, ProdID, STRTTIME, Userid, ScrapType, CbOption, CTIME, PRODUCT_NAME, STAR, RATING, TOTAL_SOLD, MONTHLY_SOLD, CatID,  PRICE_SLASH_MIN,  PRICE_SLASH_MAX,  M_PRICE,  MX_PRICE, AvgPrice, Stock, CAT_NAME_1, CAT_NAME_2, CAT_NAME_3, ImgUrl, MonthlyRevenue, LINK_SKU, IsPreOrder, EstimatedDays, "", IsFSInfo);
+            ScrapDAL.SavePreScrap(Country, PromoID, ShopID, ProdID, STRTTIME, Userid, ScrapType, CbOption, CTIME, PRODUCT_NAME, STAR, RATING, TOTAL_SOLD, MONTHLY_SOLD, CatID,  PRICE_SLASH_MIN,  PRICE_SLASH_MAX,  M_PRICE,  MX_PRICE, AvgPrice, Stock, CAT_NAME_1, CAT_NAME_2, CAT_NAME_3, ImgUrl, MonthlyRevenue, LINK_SKU, IsPreOrder, EstimatedDays, "", IsFSInfo , RescrapPending, IsFsEligible);
         }
 
-        static void UpdatePreScrap(string Country, string PromoID, string ShopID, string ProdID, string STRTTIME, int Userid, int ScrapType, int CbOption, string CTIME, string PRODUCT_NAME, Decimal STAR, int RATING, int TOTAL_SOLD, int MONTHLY_SOLD, string CatID, Decimal PRICE_SLASH_MIN, Decimal PRICE_SLASH_MAX, Decimal M_PRICE, Decimal MX_PRICE, Decimal AvgPrice, int Stock, string CAT_NAME_1, string CAT_NAME_2, string CAT_NAME_3, string ImgUrl, Decimal MonthlyRevenue, string LINK_SKU, int IsPreOrder, int EstimatedDays, string TierVarJson, int IsFSInfo)
+        static void UpdatePreScrap(string Country, string PromoID, string ShopID, string ProdID, string STRTTIME, int Userid, int ScrapType, int CbOption, string CTIME, string PRODUCT_NAME, Decimal STAR, int RATING, int TOTAL_SOLD, int MONTHLY_SOLD, string CatID, Decimal PRICE_SLASH_MIN, Decimal PRICE_SLASH_MAX, Decimal M_PRICE, Decimal MX_PRICE, Decimal AvgPrice, int Stock, string CAT_NAME_1, string CAT_NAME_2, string CAT_NAME_3, string ImgUrl, Decimal MonthlyRevenue, string LINK_SKU, int IsPreOrder, int EstimatedDays, string TierVarJson, int IsFSInfo , int RescrapPending, int IsFsEligible)
         {
             var ScrapDAL = new ScrapDAL(_iconfiguration);
-            ScrapDAL.UpdatePreScrap(Country, PromoID, ShopID, ProdID, STRTTIME, Userid, ScrapType, CbOption, CTIME, PRODUCT_NAME, STAR, RATING, TOTAL_SOLD, MONTHLY_SOLD, CatID, PRICE_SLASH_MIN, PRICE_SLASH_MAX, M_PRICE, MX_PRICE, AvgPrice, Stock, CAT_NAME_1, CAT_NAME_2, CAT_NAME_3, ImgUrl, MonthlyRevenue, LINK_SKU, IsPreOrder, EstimatedDays, "", IsFSInfo);
+            ScrapDAL.UpdatePreScrap(Country, PromoID, ShopID, ProdID, STRTTIME, Userid, ScrapType, CbOption, CTIME, PRODUCT_NAME, STAR, RATING, TOTAL_SOLD, MONTHLY_SOLD, CatID, PRICE_SLASH_MIN, PRICE_SLASH_MAX, M_PRICE, MX_PRICE, AvgPrice, Stock, CAT_NAME_1, CAT_NAME_2, CAT_NAME_3, ImgUrl, MonthlyRevenue, LINK_SKU, IsPreOrder, EstimatedDays, "", IsFSInfo, RescrapPending, IsFsEligible);
         }
 
 
@@ -357,8 +386,14 @@ namespace MongoDBTest
 
         }
 
+        static void UpdateSku_model(string Country, string PromoID, string ModelID, string ProdID, string VarName, Decimal VarPriceSlash, Decimal VarPrice, int VarStock, string VarImage, Decimal Revenue, Decimal AvgPrice, string TierIndexJson)
+        {
+            var ScrapDAL = new ScrapDAL(_iconfiguration);
+            ScrapDAL.UpdateSku_modelSku_model(Country, PromoID, ModelID, ProdID, VarName, VarPriceSlash, VarPrice, VarStock, VarImage, Revenue, AvgPrice, TierIndexJson);
 
-       
+        }
+
+
 
     }
 

@@ -239,15 +239,15 @@ namespace MongoDBTest.DAL
         }
 
 
-        public void SavePreScrap(string Country, string PromoID, string ShopID, string ProdID, string STRTTIME, int Userid, int ScrapType, int CbOption, string CTIME, string PRODUCT_NAME, Decimal STAR, int RATING, int TOTAL_SOLD, int MONTHLY_SOLD, string CatID, Decimal PRICE_SLASH_MIN, Decimal PRICE_SLASH_MAX, Decimal M_PRICE, Decimal MX_PRICE, Decimal AvgPrice, int Stock, string CAT_NAME_1, string CAT_NAME_2, string CAT_NAME_3, string ImgUrl, Decimal MonthlyRevenue, string LINK_SKU, int IsPreOrder, int EstimatedDays, string TierVarJson, int IsFsInfo)
+        public void SavePreScrap(string Country, string PromoID, string ShopID, string ProdID, string STRTTIME, int Userid, int ScrapType, int CbOption, string CTIME, string PRODUCT_NAME, Decimal STAR, int RATING, int TOTAL_SOLD, int MONTHLY_SOLD, string CatID, Decimal PRICE_SLASH_MIN, Decimal PRICE_SLASH_MAX, Decimal M_PRICE, Decimal MX_PRICE, Decimal AvgPrice, int Stock, string CAT_NAME_1, string CAT_NAME_2, string CAT_NAME_3, string ImgUrl, Decimal MonthlyRevenue, string LINK_SKU, int IsPreOrder, int EstimatedDays, string TierVarJson, int IsFsInfo , int RescrapPending , int IsFsEligible)
         {
             try
             {
                 cnn.ConnectionString = CnnStr;
                 if (cnn.State == ConnectionState.Closed) cnn.Open();
                 tran = cnn.BeginTransaction();
-                string Qry = "Insert into sku (country_code,	promotionid,	shopid,	itemid,	modified_date,	scrap_type,	cb_option,	ctime,	name,	rating_star,	rating_count,	historical_sold,	monthly_sold,	catid,	price_slash_min,	price_slash_max,	price_min,	price_max,	avg_price,	stock,	catname1,	catname2,	catname3,	image,	monthly_revenue,	product_link,	is_pre_order,	estimated_days,tier_variations , is_fs_info)" +
-                "values (@country_code,	@promotionid,	@shopid,	@itemid,	@modified_date,		@scrap_type,	@cb_option,	@ctime,	@name,	@rating_star,	@rating_count,	@historical_sold,	@monthly_sold,	@catid,	@price_slash_min,	@price_slash_max,	@price_min,	@price_max,	@avg_price,	@stock,	@catname1,	@catname2,	@catname3,	@image,	@monthly_revenue,	@product_link,	@is_pre_order,	@estimated_days,@tier_variations,@is_fs_info)";
+                string Qry = "Insert into sku (country_code,	promotionid,	shopid,	itemid,	modified_date,	scrap_type,	cb_option,	ctime,	name,	rating_star,	rating_count,	historical_sold,	monthly_sold,	catid,	price_slash_min,	price_slash_max,	price_min,	price_max,	avg_price,	stock,	catname1,	catname2,	catname3,	image,	monthly_revenue,	product_link,	is_pre_order,	estimated_days,tier_variations , is_fs_info , rescrap_pending , is_fs_eligible)" +
+                "values (@country_code,	@promotionid,	@shopid,	@itemid,	@modified_date,		@scrap_type,	@cb_option,	@ctime,	@name,	@rating_star,	@rating_count,	@historical_sold,	@monthly_sold,	@catid,	@price_slash_min,	@price_slash_max,	@price_min,	@price_max,	@avg_price,	@stock,	@catname1,	@catname2,	@catname3,	@image,	@monthly_revenue,	@product_link,	@is_pre_order,	@estimated_days,@tier_variations,@is_fs_info , @rescrap_pending , @is_fs_eligible)";
 
                 Decimal PriceDiv = Convert.ToDecimal(100000.0);
 
@@ -283,6 +283,9 @@ namespace MongoDBTest.DAL
                 Comm2.Parameters.Add("@estimated_days", SqlDbType.Int).Value = EstimatedDays; // MODIFY
                 Comm2.Parameters.Add("@tier_variations", SqlDbType.NVarChar).Value = TierVarJson;
                 Comm2.Parameters.Add("@is_fs_info", SqlDbType.Bit).Value = IsFsInfo;  // MODIFY
+                Comm2.Parameters.Add("@rescrap_pending", SqlDbType.Bit).Value = RescrapPending;
+                Comm2.Parameters.Add("@is_fs_eligible", SqlDbType.Bit).Value = IsFsEligible;
+
                 Comm2.Transaction = tran;
                 Comm2.CommandTimeout = 0;
                 Comm2.ExecuteNonQuery();
@@ -342,7 +345,6 @@ namespace MongoDBTest.DAL
                 Comm2.Dispose();
                 tran.Commit();
                 cnn.Close();
-
                 Comm2.Parameters.Clear();
 
 
@@ -364,7 +366,9 @@ namespace MongoDBTest.DAL
         }
 
 
-        public void UpdatePreScrap(string Country, string PromoID, string ShopID, string ProdID, string STRTTIME, int Userid, int ScrapType, int CbOption, string CTIME, string PRODUCT_NAME, Decimal STAR, int RATING, int TOTAL_SOLD, int MONTHLY_SOLD, string CatID, Decimal PRICE_SLASH_MIN, Decimal PRICE_SLASH_MAX, Decimal M_PRICE, Decimal MX_PRICE, Decimal AvgPrice, int Stock, string CAT_NAME_1, string CAT_NAME_2, string CAT_NAME_3, string ImgUrl, Decimal MonthlyRevenue, string LINK_SKU, int IsPreOrder, int EstimatedDays, string TierVarJson, int IsFsInfo)
+
+
+        public void UpdatePreScrap(string Country, string PromoID, string ShopID, string ProdID, string STRTTIME, int Userid, int ScrapType, int CbOption, string CTIME, string PRODUCT_NAME, Decimal STAR, int RATING, int TOTAL_SOLD, int MONTHLY_SOLD, string CatID, Decimal PRICE_SLASH_MIN, Decimal PRICE_SLASH_MAX, Decimal M_PRICE, Decimal MX_PRICE, Decimal AvgPrice, int Stock, string CAT_NAME_1, string CAT_NAME_2, string CAT_NAME_3, string ImgUrl, Decimal MonthlyRevenue, string LINK_SKU, int IsPreOrder, int EstimatedDays, string TierVarJson, int IsFsInfo , int RescrapPending, int IsFsEligible)
         {
             try
             {
@@ -372,9 +376,8 @@ namespace MongoDBTest.DAL
                 if (cnn.State == ConnectionState.Closed) cnn.Open();
                 tran = cnn.BeginTransaction();
                
-                tran = cnn.BeginTransaction();
-                //string Qry = "Update  sku  set  modified_date = @modified_date,	scrap_type = @scrap_type,	cb_option=@cb_option,	ctime = @ctime,	name= @name,	rating_star=@rating_star,	rating_count=@rating_count,	historical_sold= @historical_sold,	monthly_sold = @monthly_sold,	catid = @catid,	price_slash_min = @price_slash_min,	price_slash_max = @price_slash_max,	price_min = @price_min,	price_max = @price_max,	avg_price = @avg_price,	stock= @stock,	catname1 = @catname1,	catname2 = @catname2,	catname3 = @catname3,	image= @image,	monthly_revenue = @monthly_revenue,	product_link = @product_link,	is_pre_order = @is_pre_order ,	estimated_days = @estimated_days, tier_variations = @tier_variations, is_fs_info = @is_fs_info where country_code = @country_code,	promotionid = @promotionid,	shopid = @shopid,	itemid = @itemid ";
-                string Qry = "Update  sku  set  modified_date = @modified_date, is_fs_info = @is_fs_info where country_code = @country_code,	promotionid = @promotionid,	shopid = @shopid,	itemid = @itemid ";
+                string Qry = "Update  sku  set  modified_date = @modified_date,	price_slash_min = @price_slash_min,	price_slash_max = @price_slash_max,	price_min = @price_min,	price_max = @price_max,	 is_fs_info = @is_fs_info , rescrap_pending = @rescrap_pending , is_fs_eligible = @is_fs_eligible where country_code = @country_code and promotionid = @promotionid and	shopid = @shopid and	itemid = @itemid ";
+                //string Qry = "Update  sku  set  modified_date = @modified_date, is_fs_info = @is_fs_info , rescrap_pending = @rescrap_pending , is_fs_eligible = @is_fs_eligible where country_code = @country_code,	promotionid = @promotionid,	shopid = @shopid,	itemid = @itemid ";
 
 
                 Decimal PriceDiv = Convert.ToDecimal(100000.0);
@@ -385,32 +388,14 @@ namespace MongoDBTest.DAL
                 Comm2.Parameters.Add("@shopid", SqlDbType.BigInt).Value = Convert.ToInt64(ShopID);
                 Comm2.Parameters.Add("@itemid", SqlDbType.BigInt).Value = Convert.ToInt64(ProdID);
                 Comm2.Parameters.Add("@modified_date", SqlDbType.DateTime).Value = Convert.ToDateTime(STRTTIME);
-                //Comm2.Parameters.Add("@userid", SqlDbType.Int).Value = Userid;
-                //Comm2.Parameters.Add("@scrap_type", SqlDbType.Int).Value = ScrapType;
-                //Comm2.Parameters.Add("@cb_option", SqlDbType.Int).Value = CbOption;   // MODIFY
-                //Comm2.Parameters.Add("@ctime", SqlDbType.BigInt).Value = Convert.ToInt64(CTIME);
-                //Comm2.Parameters.Add("@name", SqlDbType.NVarChar).Value = PRODUCT_NAME;
-                //Comm2.Parameters.Add("@rating_star", SqlDbType.Decimal).Value = STAR;
-                //Comm2.Parameters.Add("@rating_count", SqlDbType.Int).Value = RATING;
-                //Comm2.Parameters.Add("@historical_sold", SqlDbType.Int).Value = TOTAL_SOLD;
-                //Comm2.Parameters.Add("@monthly_sold", SqlDbType.Int).Value = MONTHLY_SOLD;
-                //Comm2.Parameters.Add("@catid", SqlDbType.BigInt).Value = Convert.ToInt64(CatID);
-                //Comm2.Parameters.Add("@price_slash_min", SqlDbType.Decimal).Value = PRICE_SLASH_MIN / PriceDiv;  // MODIFY
-                //Comm2.Parameters.Add("@price_slash_max", SqlDbType.Decimal).Value = PRICE_SLASH_MAX / PriceDiv;   // MODIFY
-                //Comm2.Parameters.Add("@price_min", SqlDbType.Decimal).Value = M_PRICE / PriceDiv;
-                //Comm2.Parameters.Add("@price_max", SqlDbType.Decimal).Value = MX_PRICE / PriceDiv;
-                //Comm2.Parameters.Add("@avg_price", SqlDbType.Decimal).Value = AvgPrice; // MODIFY
-                //Comm2.Parameters.Add("@stock", SqlDbType.Int).Value = Stock;  // MODIFY
-                //Comm2.Parameters.Add("@catname1", SqlDbType.NVarChar, 255).Value = CAT_NAME_1;
-                //Comm2.Parameters.Add("@catname2", SqlDbType.NVarChar, 255).Value = CAT_NAME_2;
-                //Comm2.Parameters.Add("@catname3", SqlDbType.NVarChar, 255).Value = CAT_NAME_3;
-                //Comm2.Parameters.Add("@image", SqlDbType.NVarChar, 255).Value = ImgUrl;
-                //Comm2.Parameters.Add("@monthly_revenue", SqlDbType.Decimal).Value = MonthlyRevenue;
-                //Comm2.Parameters.Add("@product_link", SqlDbType.NVarChar).Value = LINK_SKU;
-                //Comm2.Parameters.Add("@is_pre_order", SqlDbType.Bit).Value = IsPreOrder;  // MODIFY
-                //Comm2.Parameters.Add("@estimated_days", SqlDbType.Int).Value = EstimatedDays; // MODIFY
-                //Comm2.Parameters.Add("@tier_variations", SqlDbType.NVarChar).Value = TierVarJson;
+                Comm2.Parameters.Add("@price_slash_min", SqlDbType.Decimal).Value = PRICE_SLASH_MIN / PriceDiv;  // MODIFY
+                Comm2.Parameters.Add("@price_slash_max", SqlDbType.Decimal).Value = PRICE_SLASH_MAX / PriceDiv;   // MODIFY
+                Comm2.Parameters.Add("@price_min", SqlDbType.Decimal).Value = M_PRICE / PriceDiv;
+                Comm2.Parameters.Add("@price_max", SqlDbType.Decimal).Value = MX_PRICE / PriceDiv;
                 Comm2.Parameters.Add("@is_fs_info", SqlDbType.Bit).Value = IsFsInfo;  // MODIFY
+                Comm2.Parameters.Add("@rescrap_pending", SqlDbType.Bit).Value = RescrapPending;
+                Comm2.Parameters.Add("@is_fs_eligible", SqlDbType.Bit).Value = IsFsEligible;
+
                 Comm2.Transaction = tran;
                 Comm2.CommandTimeout = 0;
                 Comm2.ExecuteNonQuery();
@@ -436,6 +421,58 @@ namespace MongoDBTest.DAL
                 cnn.Close();
             }
 
+        }
+
+
+
+        public void UpdateSku_modelSku_model(string Country, string PromoID, string ModelID, string ProdID, string VarName, Decimal VarPriceSlash, Decimal VarPrice, int VarStock, string VarImage, Decimal Revenue, Decimal AvgPrice, string TierIndexJson)
+        {
+            try
+            {
+
+                cnn.ConnectionString = CnnStr;
+                if (cnn.State == ConnectionState.Closed) cnn.Open();
+                tran = cnn.BeginTransaction();
+
+                string Qry = "Update sku_model set price_slash = @price_slash, price = @price ,stock =@stock where country_code = @country_code and promotionid = @promotionid and modelid = @modelid and itemid = @itemid";
+
+                Decimal PriceDiv = Convert.ToDecimal(100000.0);
+
+                SqlCommand Comm2 = new SqlCommand(Qry, cnn);
+                Comm2.Parameters.Add("@country_code", SqlDbType.VarChar, 3).Value = Country;
+                Comm2.Parameters.Add("@promotionid", SqlDbType.BigInt).Value = Convert.ToInt64(PromoID);
+                Comm2.Parameters.Add("@itemid", SqlDbType.BigInt).Value = Convert.ToInt64(ProdID);
+                Comm2.Parameters.Add("@modelid", SqlDbType.BigInt).Value = Convert.ToInt64(ModelID);
+                Comm2.Parameters.Add("@price_slash", SqlDbType.Decimal).Value = VarPriceSlash / PriceDiv;
+                Comm2.Parameters.Add("@price", SqlDbType.Decimal).Value = VarPrice / PriceDiv;
+                Comm2.Parameters.Add("@stock", SqlDbType.Int).Value = VarStock;
+        
+
+                Comm2.Transaction = tran;
+                Comm2.CommandTimeout = 0;
+                Comm2.ExecuteNonQuery();
+                Comm2.Dispose();
+                tran.Commit();
+                cnn.Close();
+                Comm2.Parameters.Clear();
+
+
+            }
+            catch (SqlException ex)
+            {
+
+                tran.Rollback();
+                cnn.Close();
+
+            }
+            catch (Exception ex)
+            {
+                //throw new Exception(ex.Message.ToString());
+                tran.Rollback();
+                cnn.Close();
+            }
+
+       
         }
 
 
